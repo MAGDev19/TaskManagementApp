@@ -8,6 +8,8 @@ const mapState = (raw: any): State => ({
   id: raw.id ?? raw.Id,
   name: raw.name ?? raw.Name,
   isActive: raw.isActive ?? raw.IsActive,
+  createdAt: raw.createdAt ?? raw.CreatedAt,
+  updatedAt: raw.updatedAt ?? raw.UpdatedAt,
   ...raw,
 });
 
@@ -39,13 +41,29 @@ export async function getStateById(id: number): Promise<State> {
 }
 
 const unwrapOperation = async (promise: Promise<any>): Promise<ApiOperationResponse<boolean>> => {
-  const response = await promise;
-  const data = response.data as any;
-  return {
-    stateOperation: data.stateOperation ?? data.StateOperation ?? false,
-    message: data.message ?? data.Message,
-    result: data.result ?? data.Result,
-  };
+  try {
+    const response = await promise;
+    const data = response.data ?? {};
+
+    return {
+      stateOperation: data.stateOperation ?? data.StateOperation ?? true,
+      result: data.result ?? data.Result ?? true,
+      message: data.message ?? data.Message ?? "Operación exitosa",
+    };
+  } catch (e: any) {
+  console.log("STATUS:", e?.response?.status);
+  console.log("DATA:", e?.response?.data);
+  console.log("TEXT:", e?.response?.statusText);
+  console.log("ERR:", e);
+
+    const data = e.response?.data ?? {};
+    return {
+      stateOperation: false,
+      result: false,
+      message: data.message ?? data.Message ?? e.message ?? "Error",
+    };
+  }
+
 };
 
 export interface StateCreateDto {

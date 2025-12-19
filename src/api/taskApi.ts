@@ -99,20 +99,39 @@ export interface TaskUpdateDto extends TaskCreateDto {
 }
 
 const unwrapOperation = async (promise: Promise<any>): Promise<ApiOperationResponse<boolean>> => {
-  const response = await promise;
-  const data = response.data as any;
-  return {
-    stateOperation: data.stateOperation ?? data.StateOperation ?? false,
-    message: data.message ?? data.Message,
-    result: data.result ?? data.Result,
-  };
+  try {
+    const response = await promise;
+    const data = response.data ?? {};
+
+    return {
+      stateOperation: data.stateOperation ?? data.StateOperation ?? true,
+      result: data.result ?? data.Result ?? true,
+      message: data.message ?? data.Message ?? "Operación exitosa",
+    };
+  } catch (e: any) {
+    const data = e.response?.data ?? {};
+    return {
+      stateOperation: false,
+      result: false,
+      message: data.message ?? "Error",
+    };
+  }
 };
 
 export async function createTask(dto: TaskCreateDto): Promise<ApiOperationResponse<boolean>> {
   const token = await getValidToken();
 
+  const dtoApi = {
+    Title: dto.title,
+    Description: dto.description,
+    DueDate: new Date(dto.dueDate).toISOString(),
+    StateId: dto.stateId,
+    CreatedAt: new Date().toISOString(),
+    UpdatedAt: new Date().toISOString(),
+  };
+
   return unwrapOperation(
-    axios.post(`${API_URL}/api/Task/PostTask`, dto, {
+    axios.post(`${API_URL}/api/Task/PostTask`, dtoApi, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         Authorization: `Bearer ${token}`,
@@ -120,12 +139,24 @@ export async function createTask(dto: TaskCreateDto): Promise<ApiOperationRespon
     })
   );
 }
+
 
 export async function updateTask(dto: TaskUpdateDto): Promise<ApiOperationResponse<boolean>> {
   const token = await getValidToken();
 
+  const dtoApi = {
+  Id: dto.id,
+  Title: dto.title,
+  Description: dto.description,
+  DueDate: new Date(dto.dueDate).toISOString(),
+  CreatedAt: new Date().toISOString(),
+  UpdatedAt: new Date().toISOString(),
+  StateId: dto.stateId,
+};
+
+
   return unwrapOperation(
-    axios.put(`${API_URL}/api/Task/UpdateTask`, dto, {
+    axios.put(`${API_URL}/api/Task/UpdateTask`, dtoApi, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         Authorization: `Bearer ${token}`,
@@ -133,6 +164,7 @@ export async function updateTask(dto: TaskUpdateDto): Promise<ApiOperationRespon
     })
   );
 }
+
 
 export async function deleteTask(id: number): Promise<ApiOperationResponse<boolean>> {
   const token = await getValidToken();
